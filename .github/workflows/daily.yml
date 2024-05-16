@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip3 install pyYAML requests
+          pip3 install pyYAML requests tqdm
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Collect Subscribe
@@ -34,6 +34,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PAT}}
         run: |
+          cd data
           gh gist edit ${{ secrets.GIST_ID }} --add "proxies.yaml"
           gh gist edit ${{ secrets.GIST_ID }} --add "subscribes.txt"
           gh gist edit ${{ secrets.GIST_ID }} --add "valid-domains.txt"
