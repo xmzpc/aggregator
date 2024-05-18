@@ -28,7 +28,7 @@ jobs:
       - name: Collect Subscribe
         id: collect
         run: |
-          python subscribe/collect.py -a -s
+          python subscribe/collect.py -a -s -l 3
 
       - name: Create/Update Gist
         env:
