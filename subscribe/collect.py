@@ -98,7 +98,7 @@ def aggregate(args: argparse.Namespace) -> None:
         rigid=not args.relaxed,
         display=display,
         num_threads=args.num,
-        remaining_hours=args.remaining
+        remaining_hours=args.life
     )
 
     if not tasks:
@@ -358,14 +358,5 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help="overwrite domains",
-    )
-
-    parser.add_argument(
-        "-re",
-        "--remaining",
-        type=int,
-        required=False,
-        default=0,
-        help="remaining hours, unit: hours",
     )
     aggregate(args=parser.parse_args())
