@@ -81,6 +81,8 @@ class TaskConfig:
     # 对于具有邮箱域名白名单且需要验证码的情况，是否使用 Gmail 别名邮箱尝试，为 True 时表示不使用
     rigid: bool = True
 
+    remaining_hours: int = 0
+
 
 def execute(task_conf: TaskConfig) -> list:
     if not task_conf:
@@ -95,6 +97,7 @@ def execute(task_conf: TaskConfig) -> list:
         include=task_conf.include,
         liveness=task_conf.liveness,
         coupon=task_conf.coupon,
+        remaining_hours=task_conf.remaining_hours
     )
 
     logger.info(f"start fetch proxy: name=[{task_conf.name}]\tid=[{task_conf.index}]\tdomain=[{obj.ref}]")

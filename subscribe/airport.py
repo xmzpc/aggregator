@@ -48,6 +48,7 @@ RENAME_SEPARATOR = "#@&#@"
 # 生成随机字符串时候选字符
 LETTERS = set(string.ascii_letters + string.digits)
 
+
 # 标记数字位数
 # SUFFIX_BITS = 2
 
@@ -125,15 +126,16 @@ def issspanel(domain: str) -> bool:
 
 class AirPort:
     def __init__(
-        self,
-        name: str,
-        site: str,
-        sub: str,
-        rename: str = "",
-        exclude: str = "",
-        include: str = "",
-        liveness: bool = True,
-        coupon: str = "",
+            self,
+            name: str,
+            site: str,
+            sub: str,
+            rename: str = "",
+            exclude: str = "",
+            include: str = "",
+            liveness: bool = True,
+            coupon: str = "",
+            remaining_hours: int = 0,
     ):
         if site.endswith("/"):
             site = site[: len(site) - 1]
@@ -167,6 +169,9 @@ class AirPort:
         self.username = ""
         self.password = ""
         self.available = True
+        self.remaining_hours = remaining_hours
+        self.plan_transfer_enable = 0
+        self.plan_remaining_hours = 0
 
     @staticmethod
     def get_register_require(domain: str, proxy: str = "", default: bool = True) -> RegisterRequire:
@@ -269,28 +274,40 @@ class AirPort:
                 authorization=authorization,
             )
 
-            if token:
-                self.sub = f"{self.ref}/api/v1/client/subscribe?token={token}"
-            else:
-                subscribe_info = renewal.get_subscribe_info(
-                    domain=self.ref, cookies=cookies, authorization=authorization
-                )
-                if subscribe_info:
-                    self.sub = subscribe_info.sub_url
+            # if token:
+            #     self.sub = f"{self.ref}/api/v1/client/subscribe?token={token}"
+            # else:
+            subscribe_info = renewal.get_subscribe_info(
+                domain=self.ref, cookies=cookies, authorization=authorization
+            )
+            if subscribe_info:
+
+                # 200s offset
+                if self.remaining_hours != 0 and subscribe_info.expired_seconds <= (self.remaining_hours * 3600 - 200):
+                    logger.error(
+                        f"[SubscriptionError] Subscription time remaining is less than {self.remaining_hours} hours, domain: {self.ref}, expired_seconds: {subscribe_info.expired_seconds}")
+                    self.sub = ""
+                    return "", ""
                 else:
-                    logger.error(f"[RegisterError] cannot get token when register, domain: {self.ref}")
+                    self.sub = subscribe_info.sub_url
+                    self.plan_remaining_hours = round(subscribe_info.expired_seconds / 3600)
+                    self.plan_transfer_enable = subscribe_info.plan_transfer_enable
+                    logger.error(
+                        f"[SubscriptionSuccess] Subscription time remaining is more than  {self.remaining_hours} hours, domain: {self.ref}, expired_seconds: {subscribe_info.expired_seconds}")
+            else:
+                logger.error(f"[RegisterError] cannot get token when register, domain: {self.ref}")
 
             return cookies, authorization
         except:
             return self.register(email, password, email_code, retry - 1)
 
     def order_plan(
-        self,
-        email: str,
-        password: str,
-        cookies: str = "",
-        authorization: str = "",
-        retry: int = 3,
+            self,
+            email: str,
+            password: str,
+            cookies: str = "",
+            authorization: str = "",
+            retry: int = 3,
     ) -> bool:
         plan = renewal.get_free_plan(
             domain=self.ref,
@@ -398,7 +415,7 @@ class AirPort:
                             return "", ""
                         message = future.result(timeout=180)
                         logger.info(
-                            f"email has been received, domain: {self.ref}\tcost: {int(time.time()- starttime)}s"
+                            f"email has been received, domain: {self.ref}\tcost: {int(time.time() - starttime)}s"
                         )
                     except concurrent.futures.TimeoutError:
                         logger.error(f"receiving mail timeout, site: {self.ref}, address: {account.address}")
@@ -423,27 +440,27 @@ class AirPort:
                 return "", ""
 
     def parse(
-        self,
-        cookie: str,
-        auth: str,
-        retry: int,
-        rate: float,
-        bin_name: str,
-        tag: str,
-        allow_insecure: bool = False,
-        udp: bool = True,
-        ignore_exclude: bool = False,
-        chatgpt: dict = None,
-        special_protocols: bool = False,
-        emoji_patterns: dict = None,
-        remained: bool = False,
+            self,
+            cookie: str,
+            auth: str,
+            retry: int,
+            rate: float,
+            bin_name: str,
+            tag: str,
+            allow_insecure: bool = False,
+            udp: bool = True,
+            ignore_exclude: bool = False,
+            chatgpt: dict = None,
+            special_protocols: bool = False,
+            emoji_patterns: dict = None,
+            remained: bool = False,
     ) -> list:
         if "" == self.sub:
             logger.error(f"[ParseError] cannot found any proxies because subscribe url is empty, domain: {self.ref}")
             return []
 
         if self.sub.startswith(utils.FILEPATH_PROTOCAL):
-            self.sub = self.sub[len(utils.FILEPATH_PROTOCAL) - 1 :]
+            self.sub = self.sub[len(utils.FILEPATH_PROTOCAL) - 1:]
             if not os.path.exists(self.sub) or not os.path.isfile(self.sub):
                 logger.error(f"[ParseError] file: {self.sub} not found")
                 return []
@@ -492,7 +509,7 @@ class AirPort:
             #     count += 1
 
         if "" == text or (
-            text.startswith("{") and text.endswith("}") and not re.search(r'"outbounds":', text, flags=re.I)
+                text.startswith("{") and text.endswith("}") and not re.search(r'"outbounds":', text, flags=re.I)
         ):
             logger.error(f"[ParseError] cannot found any proxies, subscribe: {utils.mask(url=self.sub)}")
             return []
@@ -600,7 +617,7 @@ class AirPort:
 
                 if len(name) > 30:
                     i, j, k, n = 10, 4, 4, len(name)
-                    alphabets = [x for x in name[i : n - j] if x in LETTERS]
+                    alphabets = [x for x in name[i: n - j] if x in LETTERS]
                     if len(alphabets) > k:
                         abbreviation = "".join(random.sample(alphabets, k)).strip()
                     else:
@@ -626,7 +643,8 @@ class AirPort:
 
                 if udp and "udp" not in item:
                     item["udp"] = True
-
+                item["name"] = item["name"] + "-" + str(self.plan_transfer_enable) + "G-" + str(
+                    self.plan_remaining_hours) + "H" + "-" + self.name.split('-')[0]
                 proxies.append(item)
 
             return proxies
@@ -638,7 +656,8 @@ class AirPort:
 
     @staticmethod
     def decode(
-        text: str, program: str, artifact: str = "", ignore: bool = False, special: bool = False, throw: bool = False
+            text: str, program: str, artifact: str = "", ignore: bool = False, special: bool = False,
+            throw: bool = False
     ) -> list:
         def clean_text(document: str) -> str:
             document = utils.trim(text=document)
@@ -662,9 +681,9 @@ class AirPort:
             return []
 
         if (
-            utils.isb64encode(text)
-            or (text.startswith("{") and text.endswith("}"))
-            or not re.search(r"^proxies:([\s\r\n]+)?$", text, flags=re.MULTILINE)
+                utils.isb64encode(text)
+                or (text.startswith("{") and text.endswith("}"))
+                or not re.search(r"^proxies:([\s\r\n]+)?$", text, flags=re.MULTILINE)
         ):
             artifact = utils.trim(text=artifact)
             if not artifact:

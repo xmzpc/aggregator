@@ -36,6 +36,7 @@ def assign(
     rigid: bool = True,
     display: bool = True,
     num_threads: int = 0,
+    remaining_hours: int=0,
 ) -> list[TaskConfig]:
     domains, delimiter = {}, "@#@#"
     if filename and os.path.exists(filename) and os.path.isfile(filename):
@@ -76,7 +77,7 @@ def assign(
     tasks = list()
     for domain, coupon in domains.items():
         name = crawl.naming_task(url=domain)
-        tasks.append(TaskConfig(name=name, domain=domain, coupon=coupon, bin_name=bin_name, rigid=rigid))
+        tasks.append(TaskConfig(name=name, domain=domain, coupon=coupon, bin_name=bin_name, rigid=rigid, remaining_hours=remaining_hours))
 
     return tasks
 
@@ -97,6 +98,7 @@ def aggregate(args: argparse.Namespace) -> None:
         rigid=not args.relaxed,
         display=display,
         num_threads=args.num,
+        remaining_hours=args.remaining
     )
 
     if not tasks:
@@ -358,4 +360,12 @@ if __name__ == "__main__":
         help="overwrite domains",
     )
 
+    parser.add_argument(
+        "-re",
+        "--remaining",
+        type=int,
+        required=False,
+        default=0,
+        help="remaining hours, unit: hours",
+    )
     aggregate(args=parser.parse_args())

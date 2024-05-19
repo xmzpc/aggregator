@@ -53,6 +53,8 @@ class SubscribeInfo:
     package: str
     sub_url: str
     reset_day: int
+    expired_seconds: int
+    plan_transfer_enable: int
 
 
 @dataclass
@@ -514,12 +516,15 @@ def get_subscribe_info(domain: str, cookies: str, authorization: str = "", retry
         # 如果为空, 则默认到2999/12/31 23:59:59
         timestamp = 32503651199 if not timestamp else timestamp
         expired_at = datetime.fromtimestamp(timestamp)
-        today = datetime.fromtimestamp(time.time())
+        now_timestamp = time.time()
+        today = datetime.fromtimestamp(now_timestamp)
         expired_days = (expired_at - today).days
+        expired_seconds = max(0, int(timestamp - now_timestamp))
         reset_day = data.get("reset_day", 365)
         reset_day = 365 if (reset_day is None or reset_day < 0) else reset_day
         used = data.get("d", 0)
         trafficflow = data.get("transfer_enable", 1)
+        plan_transfer_enable = data.get("plan", {}).get("transfer_enable", 1)
         used_rate = round(used / trafficflow, 2)
 
         plan = data.get("plan", {})
@@ -543,6 +548,8 @@ def get_subscribe_info(domain: str, cookies: str, authorization: str = "", retry
             package=package,
             sub_url=sub_url,
             reset_day=reset_day,
+            expired_seconds=expired_seconds,
+            plan_transfer_enable=plan_transfer_enable
         )
     except:
         logger.error(f"cannot get subscribe information, domain: {domain}, response: {content}")
