@@ -2,7 +2,7 @@ name: Get Subscription Daily
 
 on:
   schedule:
-    - cron: '0 */3 * * *'  # 每三小时运行一次
+    - cron: '0 */5 * * *'  # 每五小时运行一次
   workflow_dispatch: # 允许手动触发
 
 permissions:
