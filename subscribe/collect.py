@@ -36,7 +36,7 @@ def assign(
     rigid: bool = True,
     display: bool = True,
     num_threads: int = 0,
-    remaining_hours: int=0,
+    remaining_hours: int = 0,
 ) -> list[TaskConfig]:
     domains, delimiter = {}, "@#@#"
     if filename and os.path.exists(filename) and os.path.isfile(filename):
@@ -210,19 +210,19 @@ def aggregate(args: argparse.Namespace) -> None:
     logger.info(f"found {len(nodes)} proxies, save it to {proxies_file}")
 
     life, vestigial = max(0, args.life), max(0, args.vestigial)
-    if life > 0 or vestigial > 0:
-        tasks = [[x, 2, vestigial, life, 0, True] for x in urls]
-        results = utils.multi_thread_run(
-            func=crawl.check_status,
-            tasks=tasks,
-            num_threads=args.num,
-            show_progress=display,
-        )
-
-        urls = [urls[i] for i in range(len(urls)) if results[i][0] and not results[i][1]]
-        discard = len(tasks) - len(urls)
-
-        logger.info(f"filter subscriptions finished, total: {len(tasks)}, found: {len(urls)}, discard: {discard}")
+    # if life > 0 or vestigial > 0:
+    #     tasks = [[x, 2, vestigial, life, 0, True] for x in urls]
+    #     results = utils.multi_thread_run(
+    #         func=crawl.check_status,
+    #         tasks=tasks,
+    #         num_threads=args.num,
+    #         show_progress=display,
+    #     )
+    #
+    #     urls = [urls[i] for i in range(len(urls)) if results[i][0] and not results[i][1]]
+    #     discard = len(tasks) - len(urls)
+    #
+    #     logger.info(f"filter subscriptions finished, total: {len(tasks)}, found: {len(urls)}, discard: {discard}")
 
     utils.write_file(filename=os.path.join(args.output, "subscribes.txt"), lines=urls)
     domains = [utils.extract_domain(url=x, include_protocal=True) for x in urls]

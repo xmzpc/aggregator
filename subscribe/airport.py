@@ -283,7 +283,7 @@ class AirPort:
             if subscribe_info:
 
                 # 200s offset
-                if self.remaining_hours != 0 and subscribe_info.expired_seconds <= (self.remaining_hours * 3600 - 200):
+                if self.remaining_hours > 0 and subscribe_info.expired_seconds <= (self.remaining_hours * 3600 - 200):
                     logger.error(
                         f"[SubscriptionError] Subscription time remaining is less than {self.remaining_hours} hours, domain: {self.ref}, expired_seconds: {subscribe_info.expired_seconds}")
                     self.sub = ""
