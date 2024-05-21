@@ -581,7 +581,7 @@ def check(proxy: dict, api_url: str, timeout: int, test_url: str, delay: int, st
     interval = random.randint(30, 200) / 1000
     targets = [
         test_url,
-        # "https://www.youtube.com/s/player/23010b46/player_ias.vflset/en_US/remote.js",
+        "https://www.youtube.com/s/player/23010b46/player_ias.vflset/en_US/remote.js",
     ]
     if strict:
         targets.append(random.choice(DOWNLOAD_URL))
@@ -600,33 +600,33 @@ def check(proxy: dict, api_url: str, timeout: int, test_url: str, delay: int, st
                 alive = False
                 break
 
-        # if alive:
-        #     # filter and check US(for speed) proxies as candidates for ChatGPT/OpenAI/New Bing/Google Bard
-        #     proxy_name = proxy.get("name", "")
-        #     if proxy.pop("chatgpt", False) and not proxy_name.endswith(utils.CHATGPT_FLAG):
-        #         try:
-        #             # check for ChatGPT Web: https://chat.openai.com
-        #             request = urllib.request.Request(
-        #                 url=f"{base_url}https://chat.openai.com/favicon.ico&expected=200",
-        #                 headers=utils.DEFAULT_HTTP_HEADERS,
-        #             )
-        #             response = urllib.request.urlopen(request, timeout=5, context=CTX)
-        #             if response.getcode() == 200:
-        #                 content = str(response.read(), encoding="utf-8")
-        #                 data = json.loads(content)
-        #                 allowed = data.get("delay", -1) > 0
-        #
-        #             # check for ChatGPT API: https://api.openai.com
-        #             if allowed:
-        #                 content = utils.http_get(
-        #                     url=f"{base_url}https://api.openai.com/v1/engines&expected=401",
-        #                     retry=1,
-        #                 )
-        #                 data = json.loads(content)
-        #                 if data.get("delay", -1) > 0:
-        #                     proxy["name"] = f"{proxy_name}{utils.CHATGPT_FLAG}"
-        #         except Exception:
-        #             pass
+        if alive:
+            # filter and check US(for speed) proxies as candidates for ChatGPT/OpenAI/New Bing/Google Bard
+            proxy_name = proxy.get("name", "")
+            if proxy.pop("chatgpt", False) and not proxy_name.endswith(utils.CHATGPT_FLAG):
+                try:
+                    # check for ChatGPT Web: https://chat.openai.com
+                    request = urllib.request.Request(
+                        url=f"{base_url}https://chat.openai.com/favicon.ico&expected=200",
+                        headers=utils.DEFAULT_HTTP_HEADERS,
+                    )
+                    response = urllib.request.urlopen(request, timeout=5, context=CTX)
+                    if response.getcode() == 200:
+                        content = str(response.read(), encoding="utf-8")
+                        data = json.loads(content)
+                        allowed = data.get("delay", -1) > 0
+
+                    # check for ChatGPT API: https://api.openai.com
+                    if allowed:
+                        content = utils.http_get(
+                            url=f"{base_url}https://api.openai.com/v1/engines&expected=401",
+                            retry=1,
+                        )
+                        data = json.loads(content)
+                        if data.get("delay", -1) > 0:
+                            proxy["name"] = f"{proxy_name}{utils.CHATGPT_FLAG}"
+                except Exception:
+                    pass
 
         return alive
     except:
